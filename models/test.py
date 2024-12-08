@@ -7,12 +7,12 @@ cap = cv2.VideoCapture(1)
 model = YOLO("models/weights/best.pt" )
 
 classNames = [
-    "backpack", "bench", "handbag", "person", "refrigerator", "Product"
+    "person", "Product"
 ]
 
 while True:
     success, img = cap.read()
-    results = model(img, stream=True, conf = 0.7)
+    results = model(img, stream=True, conf = 0.)
 
     for r in results:
         boxes = r.boxes
