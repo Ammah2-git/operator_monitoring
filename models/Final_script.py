@@ -14,9 +14,7 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Define class names
-classNames = [
-    "backpack", "bench", "handbag", "person", "refrigerator", "Product"
-]
+classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "Product"]
 
 # ROI (Region of Interest)
 roi_x1, roi_y1 = 200, 0  # Top-left corner of the ROI
@@ -26,14 +24,24 @@ roi_x2, roi_y2 = 1700, 1080  # Bottom-right corner of the ROI
 tracked_objects = {}
 next_object_id = 1
 buffer_time = 0.5  # Buffer for maintaining stability
+iou_threshold = 0.3  # Minimum IoU for considering as the same object
+distance_threshold = 100  # Euclidean distance threshold
 min_duration = 10  # Minimum duration (in seconds) for logging
 
 # Data logging
 logged_data = []
 
-# Create a named window and set it to a maximized size
-cv2.namedWindow("Webcam", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("Webcam", 0, 0)
+# Helper function to calculate IoU
+def calculate_iou(boxA, boxB):
+    xA = max(boxA[0], boxB[0])
+    yA = max(boxA[1], boxB[1])
+    xB = min(boxA[2], boxB[2])
+    yB = min(boxA[3], boxB[3])
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+    boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+    return iou
 
 # Main loop
 while True:
@@ -72,6 +80,7 @@ while True:
 
         # Assign a unique ID to new objects or match with existing ones
         best_match_id = None
+        best_iou = 0
         best_distance = float('inf')
 
         for obj_id, tracked in tracked_objects.items():
@@ -82,12 +91,14 @@ while True:
             detected_center = ((bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2)
             tracked_center = ((tracked_bbox[0] + tracked_bbox[2]) / 2, (tracked_bbox[1] + tracked_bbox[3]) / 2)
 
-            # Calculate the Euclidean distance between centers
+            # Calculate IoU and distance
+            iou = calculate_iou(bbox, tracked_bbox)
             distance = math.sqrt((detected_center[0] - tracked_center[0])**2 +
                                  (detected_center[1] - tracked_center[1])**2)
 
-            # If the distance is below the max threshold, consider it the same object
-            if distance < best_distance and distance < 100:  # Increased threshold
+            # Use both IoU and distance for matching
+            if iou > best_iou and distance < distance_threshold:
+                best_iou = iou
                 best_distance = distance
                 best_match_id = obj_id
 
@@ -136,7 +147,7 @@ while True:
 
         # Draw bounding box and label
         cv2.rectangle(img, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (255, 0, 255), 3)
-        cv2.putText(img, f"{tracked['class_name']} {obj_id}: {elapsed_time:.2f}s", 
+        cv2.putText(img, f"{tracked['class_name']} {obj_id}: {elapsed_time:.2f}s",
                     (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
     # Display the frame
@@ -152,5 +163,5 @@ cv2.destroyAllWindows()
 
 # Save logged data to a CSV
 df = pd.DataFrame(logged_data)
-df.to_csv("roi_data.csv", index=False)
-print("ROI data saved to roi_data.csv")
+df.to_csv("Time_data.csv", index=False)
+print("ROI data saved to _data.csv")
