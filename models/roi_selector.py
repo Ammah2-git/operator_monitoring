@@ -1,6 +1,6 @@
 import cv2
 
-def select_roi(camera_index=0, resolution=(1920, 1080)):
+def select_roi(camera_index=0, resolution=(1280, 720)):
     """
     Opens the camera, displays the feed, allows ROI selection, and shuts down the camera afterward.
     Returns the top-left and bottom-right coordinates of the selected ROI.
@@ -25,10 +25,10 @@ def select_roi(camera_index=0, resolution=(1920, 1080)):
 
     # Open the camera
     print("Initializing camera...")
-    cap = cv2.VideoCapture(camera_index)
+    cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
-        print(f"Error: Could not open camera at index {camera_index}.")
+        print(f"Error: Could not open camera .")
         return None, None, None, None
 
     # Set camera resolution
