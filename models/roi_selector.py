@@ -1,6 +1,6 @@
 import cv2
 
-def select_roi(camera_index=0, resolution=(1280, 720)):
+def select_roi(camera_index=0, resolution=(1280, 720)): 
     """
     Opens the camera, displays the feed, allows ROI selection, and shuts down the camera afterward.
     Returns the top-left and bottom-right coordinates of the selected ROI.
@@ -84,4 +84,4 @@ def select_roi(camera_index=0, resolution=(1280, 720)):
 
 # Test the ROI Selector
 if __name__ == "__main__":
-    select_roi(camera_index=0, resolution=(1920, 1080))
+    select_roi(camera_index=0, resolution=(1280, 720))
