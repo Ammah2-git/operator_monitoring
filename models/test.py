@@ -15,7 +15,7 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Define class names
-classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "Product"]
+classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "product"]
 
 # Use the ROI selector to define the region of interest
 roi_x1, roi_y1, roi_x2, roi_y2 = select_roi(camera_index=0, resolution=(1920, 1080))
@@ -73,11 +73,14 @@ while True:
             class_id = int(box.cls[0])
             class_name = classNames[class_id]
 
-            # Check if the object is inside the ROI (for "Product") or outside (for "Person")
+            # Detect "person" everywhere
             if class_name == "person":
                 detected_objects.append({'bbox': (x1, y1, x2, y2), 'class_name': class_name})
-            elif class_name == "Product" and x1 >= roi_x1 and y1 >= roi_y1 and x2 <= roi_x2 and y2 <= roi_y2:
-                detected_objects.append({'bbox': (x1, y1, x2, y2), 'class_name': class_name})
+
+            # Detect "product" only inside the ROI
+            elif class_name == "product":
+                if x1 >= roi_x1 and y1 >= roi_y1 and x2 <= roi_x2 and y2 <= roi_y2:
+                    detected_objects.append({'bbox': (x1, y1, x2, y2), 'class_name': class_name})
 
     # Match detected objects with tracked objects
     current_time = time.time()
