@@ -4,6 +4,7 @@ import math
 import time
 from datetime import datetime
 import pandas as pd
+from roi_selector import select_roi  # Import the ROI selection function
 
 # Initialize the camera and YOLO model
 cap = cv2.VideoCapture(0)
@@ -14,18 +15,24 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 # Define class names
-classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "Product"]
+classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "product"]
 
-# ROI (Region of Interest)
-roi_x1, roi_y1 = 200, 0  # Top-left corner of the ROI
-roi_x2, roi_y2 = 1700, 1080  # Bottom-right corner of the ROI
+# Use the ROI selector to define the region of interest
+roi_x1, roi_y1, roi_x2, roi_y2 = select_roi(camera_index=0, resolution=(1920, 1080))
+
+# Ensure valid ROI selection
+if None in (roi_x1, roi_y1, roi_x2, roi_y2):
+    print("No valid ROI selected. Exiting...")
+    cap.release()
+    cv2.destroyAllWindows()
+    exit()
 
 # Tracking objects
 tracked_objects = {}
-next_object_id = 1
-buffer_time = 0.5  # Buffer for maintaining stability
-iou_threshold = 0.3  # Minimum IoU for considering as the same object
-distance_threshold = 100  # Euclidean distance threshold
+class_counters = {"person": 1, "product": 1}  # Separate counters for each class
+buffer_time = 1  # Buffer for maintaining stability
+iou_threshold = 0.2  # Minimum IoU for considering as the same object
+distance_threshold = 150  # Euclidean distance threshold
 min_duration = 10  # Minimum duration (in seconds) for logging
 
 # Data logging
@@ -66,9 +73,14 @@ while True:
             class_id = int(box.cls[0])
             class_name = classNames[class_id]
 
-            # Check if the object is inside the ROI
-            if x1 >= roi_x1 and y1 >= roi_y1 and x2 <= roi_x2 and y2 <= roi_y2:
+            # Detect "person" everywhere
+            if class_name == "person":
                 detected_objects.append({'bbox': (x1, y1, x2, y2), 'class_name': class_name})
+
+            # Detect "product" only inside the ROI
+            elif class_name == "product":
+                if x1 >= roi_x1 and y1 >= roi_y1 and x2 <= roi_x2 and y2 <= roi_y2:
+                    detected_objects.append({'bbox': (x1, y1, x2, y2), 'class_name': class_name})
 
     # Match detected objects with tracked objects
     current_time = time.time()
@@ -111,14 +123,16 @@ while True:
                 'class_name': class_name
             }
         else:
-            # Create a new tracked object
-            new_tracked_objects[next_object_id] = {
+            # Create a new tracked object with a class-specific ID
+            object_id = class_counters[class_name]
+            class_counters[class_name] += 1  # Increment the counter for this class
+
+            new_tracked_objects[object_id] = {
                 'bbox': bbox,
                 'start_time': current_time,
                 'last_seen': current_time,
                 'class_name': class_name
             }
-            next_object_id += 1
 
     # Retain objects within the buffer time
     for obj_id, tracked in tracked_objects.items():
@@ -164,4 +178,4 @@ cv2.destroyAllWindows()
 # Save logged data to a CSV
 df = pd.DataFrame(logged_data)
 df.to_csv("Time_data.csv", index=False)
-print("ROI data saved to _data.csv")
+print("ROI data saved to Time_data.csv")
