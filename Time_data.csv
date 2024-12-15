@@ -1,1 +1,4 @@
-
+ID,Class,Start Time,End Time,Total Duration (s)
+4,product,12:44:57 AM,12:45:10 AM,13.66
+2,person,12:44:45 AM,12:45:11 AM,26.28
+6,product,12:45:16 AM,12:45:31 AM,14.63

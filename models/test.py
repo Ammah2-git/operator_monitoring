@@ -29,10 +29,10 @@ if None in (roi_x1, roi_y1, roi_x2, roi_y2):
 
 # Tracking objects
 tracked_objects = {}
-next_object_id = 1
-buffer_time = 0.5  # Buffer for maintaining stability
-iou_threshold = 0.3  # Minimum IoU for considering as the same object
-distance_threshold = 100  # Euclidean distance threshold
+class_counters = {"person": 1, "product": 1}  # Separate counters for each class
+buffer_time = 1  # Buffer for maintaining stability
+iou_threshold = 0.2  # Minimum IoU for considering as the same object
+distance_threshold = 150  # Euclidean distance threshold
 min_duration = 10  # Minimum duration (in seconds) for logging
 
 # Data logging
@@ -123,14 +123,16 @@ while True:
                 'class_name': class_name
             }
         else:
-            # Create a new tracked object
-            new_tracked_objects[next_object_id] = {
+            # Create a new tracked object with a class-specific ID
+            object_id = class_counters[class_name]
+            class_counters[class_name] += 1  # Increment the counter for this class
+
+            new_tracked_objects[object_id] = {
                 'bbox': bbox,
                 'start_time': current_time,
                 'last_seen': current_time,
                 'class_name': class_name
             }
-            next_object_id += 1
 
     # Retain objects within the buffer time
     for obj_id, tracked in tracked_objects.items():
