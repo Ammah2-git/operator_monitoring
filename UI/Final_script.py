@@ -6,40 +6,44 @@ from datetime import datetime
 import pandas as pd
 from roi_selector import select_roi  # Import the ROI selection function
 
-# Initialize the camera and YOLO model
 cap = cv2.VideoCapture(0)
 model = YOLO("models/weights/best.pt")
 
-# Set camera resolution to 1920x1080
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+def run_yolo_camera(running_flag): 
+ # Initialize the camera and YOLO model
+ cap = cv2.VideoCapture(0)
+ model = YOLO("models/weights/best.pt")
 
-# Define class names
-classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "product"]
+ # Set camera resolution to 1920x1080
+ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+ cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-# Use the ROI selector to define the region of interest
-roi_x1, roi_y1, roi_x2, roi_y2 = select_roi(camera_index=0, resolution=(1280, 720))
+ # Define class names
+ classNames = ["backpack", "bench", "handbag", "person", "refrigerator", "product"]
 
-# Ensure valid ROI selection
-if None in (roi_x1, roi_y1, roi_x2, roi_y2):
+ # Use the ROI selector to define the region of interest
+ roi_x1, roi_y1, roi_x2, roi_y2 = select_roi(camera_index=0, resolution=(1280, 720))
+
+ # Ensure valid ROI selection
+ if None in (roi_x1, roi_y1, roi_x2, roi_y2):
     print("No valid ROI selected. Exiting...")
     cap.release()
     cv2.destroyAllWindows()
     exit()
 
-# Tracking objects
-tracked_objects = {}
-class_counters = {"person": 1, "product": 1}  # Separate counters for each class
-buffer_time = 1  # Buffer for maintaining stability
-iou_threshold = 0.2  # Minimum IoU for considering as the same object
-distance_threshold = 150  # Euclidean distance threshold
-min_duration = 10  # Minimum duration (in seconds) for logging
+ # Tracking objects
+ tracked_objects = {}
+ class_counters = {"person": 1, "product": 1}  # Separate counters for each class
+ buffer_time = 1  # Buffer for maintaining stability
+ iou_threshold = 0.2  # Minimum IoU for considering as the same object
+ distance_threshold = 150  # Euclidean distance threshold
+ min_duration = 10  # Minimum duration (in seconds) for logging
 
-# Data logging
-logged_data = []
+ # Data logging
+ logged_data = []
 
-# Helper function to calculate IoU
-def calculate_iou(boxA, boxB):
+ # Helper function to calculate IoU
+ def calculate_iou(boxA, boxB):
     xA = max(boxA[0], boxB[0])
     yA = max(boxA[1], boxB[1])
     xB = min(boxA[2], boxB[2])
@@ -50,8 +54,8 @@ def calculate_iou(boxA, boxB):
     iou = interArea / float(boxAArea + boxBArea - interArea)
     return iou
 
-# Main loop
-while True:
+ # Main loop
+ while running_flag["running"]:  # Use the flag to control the loop
     success, img = cap.read()
     if not success:
         print("Failed to capture frame. Exiting...")
@@ -168,14 +172,16 @@ while True:
     cv2.imshow('Webcam', img)
 
     # Exit the loop when 'q' is pressed
-    if cv2.waitKey(1) == ord('q'):
-        break
+    if cv2.waitKey(1) & 0xFF == ord('q'):  # Stop loop if "q" is pressed
+            running_flag["running"] = False
 
-# Release resources
-cap.release()
-cv2.destroyAllWindows()
+ # Release resources
+ cap.release()
+ cv2.destroyAllWindows()
 
-# Save logged data to a CSV
-df = pd.DataFrame(logged_data)
-df.to_csv("Time_data.csv", index=False)
-print("ROI data saved to Time_data.csv")
+ # Save logged data to a CSV
+ df = pd.DataFrame(logged_data)
+ df.to_csv("Time_data.csv", index=False)
+ print("ROI data saved to Time_data.csv")
+
+
